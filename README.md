@@ -31,23 +31,16 @@ An intelligent web application that analyzes interview recordings and provides c
 - OpenAI API Key
 
 ## Installation
-
-### 1. Clone the Repository
-
-git clone https://github.com/yourusername/ai-interview-feedback-analyzer.git
-cd ai-interview-feedback-analyzer
-
-
-### 2. Create Virtual Environment
+### 1. Create Virtual Environment
 
 python3 -m venv venv
 source venv/bin/activate # On Windows: venv\Scripts\activate
 
-### 3. Install Dependencies
+### 2. Install Dependencies
 
 pip install -r requirements.txt
 
-### 4. Install FFmpeg
+### 3. Install FFmpeg
 
 macOS
 brew install ffmpeg
