@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Feedback Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto;
+        }
+        .score-excellent { background: #28a745; }
+        .score-good { background: #17a2b8; }
+        .score-average { background: #ffc107; color: #000; }
+        .score-poor { background: #dc3545; }
+        .filler-word-badge {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 2px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+                    <h1>Interview Feedback Report</h1>
+                    <a href="/" class="btn btn-secondary">New Analysis</a>
+                </div>
+                
+                <!-- Overall Score -->
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <h3>Overall Performance</h3>
+                        <div id="scoreCircle" class="score-circle mb-3">
+                            <span id="scoreValue">-</span>
+                        </div>
+                        <p class="lead" id="scoreDescription">Loading...</p>
+                    </div>
+                </div>
+                
+                <!-- Weak Answers Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-exclamation-triangle text-warning"></i> Areas for Improvement</h4>
+                    </div>
+                    <div class="card-body" id="weakAnswers">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status"></div>
+                            <p>Analyzing your responses...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filler Words Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-volume-down text-info"></i> Speech Patterns</h4>
+                    </div>
+                    <div class="card-body" id="fillerWords">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status"></div>
+                            <p>Analyzing speech patterns...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confidence Markers Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-user-check text-success"></i> Confidence Analysis</h4>
+                    </div>
+                    <div class="card-body" id="confidenceMarkers">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status"></div>
+                            <p>Analyzing confidence markers...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recommendations Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4><i class="fas fa-lightbulb text-warning"></i> Recommendations</h4>
+                    </div>
+                    <div class="card-body" id="recommendations">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status"></div>
+                            <p>Generating recommendations...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function getScoreClass(score) {
+            if (score >= 8) return 'score-excellent';
+            if (score >= 6) return 'score-good';
+            if (score >= 4) return 'score-average';
+            return 'score-poor';
+        }
+        
+        function getScoreDescription(score) {
+            if (score >= 8) return 'Excellent performance! You demonstrated strong interview skills.';
+            if (score >= 6) return 'Good performance with room for improvement in specific areas.';
+            if (score >= 4) return 'Average performance. Focus on the recommendations below.';
+            return 'Needs improvement. Practice the suggested areas for better results.';
+        }
+        
+        function displayFeedback(feedback) {
+            // Display overall score
+            const scoreElement = document.getElementById('scoreValue');
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreDesc = document.getElementById('scoreDescription');
+            
+            scoreElement.textContent = feedback.overall_score.toFixed(1);
+            scoreCircle.className = `score-circle ${getScoreClass(feedback.overall_score)}`;
+            scoreDesc.textContent = getScoreDescription(feedback.overall_score);
+            
+            // Display weak answers
+            const weakAnswersContainer = document.getElementById('weakAnswers');
+            if (feedback.weak_answers && feedback.weak_answers.length > 0) {
+                let weakAnswersHTML = '';
+                feedback.weak_answers.forEach((answer, index) => {
+                    weakAnswersHTML += `
+                        <div class="mb-4">
+                            <h5>Response ${index + 1}</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Original Answer:</h6>
+                                    <p class="text-muted">"${answer.original_answer}"</p>
+                                    <h6>Issues Identified:</h6>
+                                    <ul>
+                                        ${answer.issues.map(issue => `<li>${issue}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Suggestions:</h6>
+                                    <ul>
+                                        ${answer.suggestions.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                                    </ul>
+                                    <h6>Improved Example:</h6>
+                                    <div class="alert alert-success">
+                                        "${answer.improved_example}"
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr>
+                    `;
+                });
+                weakAnswersContainer.innerHTML = weakAnswersHTML;
+            } else {
+                weakAnswersContainer.innerHTML = '<p class="text-success">Great job! No significant issues found with your responses.</p>';
+            }
+            
+            // Display filler words
+            const fillerWordsContainer = document.getElementById('fillerWords');
+            if (feedback.filler_words && feedback.filler_words.length > 0) {
+                let fillerHTML = '<h6>Filler Words Detected:</h6><div class="mb-3">';
+                feedback.filler_words.forEach(filler => {
+                    fillerHTML += `<span class="filler-word-badge">${filler.word}: ${filler.count} times</span>`;
+                });
+                fillerHTML += '</div><p class="text-muted">Try to reduce filler words to sound more confident and professional.</p>';
+                fillerWordsContainer.innerHTML = fillerHTML;
+            } else {
+                fillerWordsContainer.innerHTML = '<p class="text-success">Excellent! No excessive filler words detected.</p>';
+            }
+            
+            // Display confidence markers
+            const confidenceContainer = document.getElementById('confidenceMarkers');
+            if (feedback.confidence_markers && feedback.confidence_markers.length > 0) {
+                let confidenceHTML = '';
+                feedback.confidence_markers.forEach(marker => {
+                    confidenceHTML += `
+                        <div class="alert alert-warning">
+                            <h6>${marker.marker_type.replace('_', ' ').toUpperCase()}</h6>
+                            <p><strong>Impact:</strong> ${marker.impact}</p>
+                            <p><strong>Suggestion:</strong> ${marker.suggestion}</p>
+                        </div>
+                    `;
+                });
+                confidenceContainer.innerHTML = confidenceHTML;
+            } else {
+                confidenceContainer.innerHTML = '<p class="text-success">Great! You demonstrated strong confidence throughout the interview.</p>';
+            }
+            
+            // Display recommendations
+            const recommendationsContainer = document.getElementById('recommendations');
+            if (feedback.recommendations && feedback.recommendations.length > 0) {
+                let recHTML = '<ul class="list-group list-group-flush">';
+                feedback.recommendations.forEach(rec => {
+                    recHTML += `<li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i>${rec}</li>`;
+                });
+                recHTML += '</ul>';
+                recommendationsContainer.innerHTML = recHTML;
+            } else {
+                recommendationsContainer.innerHTML = '<p>No specific recommendations available.</p>';
+            }
+        }
+        
+        // Load feedback data from sessionStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedbackData = sessionStorage.getItem('feedbackData');
+            if (feedbackData) {
+                const feedback = JSON.parse(feedbackData);
+                displayFeedback(feedback);
+                // Clear the data after use
+                sessionStorage.removeItem('feedbackData');
+            } else {
+                // Redirect back to home if no data
+                alert('No feedback data found. Please upload an interview first.');
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>
+

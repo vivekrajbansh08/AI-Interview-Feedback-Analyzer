@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Feedback Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 50px;
+            text-align: center;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        .upload-area:hover {
+            background-color: #f8f9fa;
+        }
+        .loading {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="text-center mt-5 mb-4">AI-Powered Interview Feedback Analyzer</h1>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                <h4>Upload Your Interview</h4>
+                                <p class="text-muted">Drag and drop or click to select</p>
+                                <p class="small">Supported: MP3, WAV, MP4, MOV, AVI, TXT (Max 50MB)</p>
+                                <input type="file" id="fileInput" name="file" accept=".mp3,.wav,.mp4,.mov,.avi,.txt" style="display: none;">
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Choose File</button>
+                            </div>
+                            
+                            <div id="fileInfo" class="mt-3" style="display: none;">
+                                <div class="alert alert-info">
+                                    <strong>Selected:</strong> <span id="fileName"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <button type="submit" class="btn btn-success btn-lg" id="uploadBtn">
+                                    <span id="uploadText">Upload & Analyze</span>
+                                    <span id="loadingSpinner" class="loading">
+                                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                                        Processing...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div id="results" class="mt-4" style="display: none;">
+                            <div class="alert alert-success">
+                                <h5>Processing Complete!</h5>
+                                <p>Your interview has been processed. Click below to view the feedback.</p>
+                                <button class="btn btn-primary" id="viewFeedbackBtn">View Feedback Report</button>
+                            </div>
+                        </div>
+                        
+                        <div id="error" class="mt-4" style="display: none;">
+                            <div class="alert alert-danger">
+                                <h5>Error</h5>
+                                <p id="errorMessage"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentInterviewId = null;
+        let currentTranscript = null;
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileInfo').style.display = 'block';
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('uploadText').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'inline';
+            document.getElementById('uploadBtn').disabled = true;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentInterviewId = result.interview_id;
+                    currentTranscript = result.transcript;
+                    document.getElementById('results').style.display = 'block';
+                    document.getElementById('error').style.display = 'none';
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('results').style.display = 'none';
+            } finally {
+                // Reset loading state
+                document.getElementById('uploadText').style.display = 'inline';
+                document.getElementById('loadingSpinner').style.display = 'none';
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        });
+
+        document.getElementById('viewFeedbackBtn').addEventListener('click', async function() {
+            if (!currentInterviewId || !currentTranscript) {
+                alert('No interview data available');
+                return;
+            }
+            
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Analyzing...';
+            
+            try {
+                const response = await fetch(`/analyze/${currentInterviewId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(currentTranscript)
+                });
+                
+                const feedback = await response.json();
+                
+                // Store feedback in sessionStorage and redirect
+                sessionStorage.setItem('feedbackData', JSON.stringify(feedback));
+                window.location.href = `/feedback/${currentInterviewId}`;
+                
+            } catch (error) {
+                alert('Failed to analyze interview: ' + error.message);
+                this.disabled = false;
+                this.innerHTML = 'View Feedback Report';
+            }
+        });
+    </script>
+</body>
+</html>
+
